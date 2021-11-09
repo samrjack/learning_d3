@@ -3,6 +3,16 @@
     <head>
         <link rel="stylesheet" href="style.css"/>
         <title>Sample Page</title>
+
+        <style type="text/css">
+         #test {
+             font-size: 24px;
+             font-weight: bold;
+             background-color: red;
+             line-height: 26px;
+             color: white;
+         }
+        </style>
     </head>
     <body>
         <h1>Amazing Visualization Tool Cures All Ills</h1>
@@ -22,5 +32,7 @@
         <!-- Not really sure why I picked this image -->
         <img height=200px src="./sample.jpg"/ alt="A nice picture of me to pass the time.">
         <p>Anyways, this is all done to learn a tool called <a href="http://d3js.org">D3</a>.</p>
+        <p id="test">A paragraph that uses embedded styling in the html. Really sticks out doesn't it?</p>
+        <p style="color: blue; font-size: 48px; fontstyle: italic; line-height: 50px; background-color: white">And here's some inlined styling which is even more annoying!</p>
     </body>
 </html>
