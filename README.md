@@ -1,0 +1,1 @@
+This repository contains all the projects, pages, and experiemnts I create while reading through the book "Interactive Data Visualization for the Web -- An Introduction to Designing with D3" by Scott Murray.
