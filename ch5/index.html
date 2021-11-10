@@ -9,7 +9,30 @@
     <body>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
-            // Some cool code can go here later
+            // The below code shows that you can select the body then
+            // append multiple paragraphs to it and then add text to those
+            // paragraphs. When you specify text, it removes whatever is
+            // already present.
+            // var bod = d3.select("body");
+            // for(i=0; i < 10; i++) {
+            //     bod.append("p");
+            // }
+            // d3.selectAll("p").text("hello!! ")
+            // d3.selectAll("p").text("New Text")
+
+            var dataset = [5, 10, 15, 20, 25] // Using this data going forward
+
+            // The way d3 works with CSV has changed so be careful going forward.
+            // d3.csv("food.csv", d => console.log(d));
+
+            // Use the data above to dynamically generate paragraphs
+            d3.select("body").selectAll("p")
+              .data(dataset)
+              .enter()
+              .append("p")
+              .style("color", d => (d <= 15 ? "black" : "red"))
+              .text(data => "This paragraph is for " + data);
+
         </script>
     </body>
 </html>
