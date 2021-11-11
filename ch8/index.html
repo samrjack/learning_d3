@@ -9,7 +9,7 @@
     <body>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
-            var margin = {top: 20, right: 40, bottom: 20, left: 20};
+            var margin = {top: 20, right: 50, bottom: 20, left: 33};
             var svgH = 300;
             var svgW = 600;
             var dataset = [100, 200, 300, 400, 500]
@@ -24,6 +24,11 @@
                 [475,44], [25,67],
                 [85,21],  [220,88], [600, 150]
             ];
+
+            var numPoints = 50;
+            var xMax = Math.random() * 1000
+            var yMax = Math.random() * 1000
+            dataset = Array.from({length: numPoints}, () => [Math.floor(Math.random() * xMax), Math.floor(Math.random() * yMax)]);
 
             d3.max(dataset, d => d[0])
 
@@ -54,16 +59,38 @@
                .attr("cy", d => yScale(d[1]))
                .attr("r", d => aScale(d[1]));
 
-            svg.selectAll("text")
-               .data(dataset)
-               .enter()
-               .append("text")
-               .text(d => d[0] + " | " + d[1])
-               .attr("x", d => xScale(d[0]))
-               .attr("y", d => yScale(d[1]))
-               .attr("font-family", "sans-serif")
-               .attr("font-size", "11px")
-               .attr("fill", "red")
+            // svg.selectAll("text")
+            //    .data(dataset)
+            //    .enter()
+            //    .append("text")
+            //    .text(d => d[0] + " | " + d[1])
+            //    .attr("x", d => xScale(d[0]))
+            //    .attr("y", d => yScale(d[1]))
+            //    .attr("font-family", "sans-serif")
+            //    .attr("font-size", "11px")
+            //    .attr("fill", "red")
+
+            // Here are the two ways to create axis
+            var formatAsPercentage = d3.format("")
+            var xAxis = d3.axisBottom(xScale)
+                          .ticks(5)
+                          .tickFormat(formatAsPercentage)
+
+
+            var yAxis = d3.axisLeft()
+                          .scale(yScale)
+            // .tickValues([0, 10, 40, 60, 100]);
+
+            svg.append("g")
+               .attr("class", "axis")
+               .attr("transform", "translate(0," + (svgH - margin.bottom) + ")")
+               .call(xAxis);
+
+            svg.append("g")
+               .attr("class", "axis")
+               .attr("transform", "translate(" + margin.left + ",0)")
+               .call(yAxis);
+
 
             // Time scaling
             var parseTime = d3.timeParse("%m/%d/%y");
@@ -79,8 +106,8 @@
             timeCSV.then(function(dataset) {
                 xScale = d3.scaleTime()
                            .domain([
-                               d3.min(dataset, d => d.Date),
-                               d3.max(dataset, d => d.Date)
+                               d3.timeDay.offset(d3.min(dataset, d => d.Date), -1),
+                               d3.timeDay.offset(d3.max(dataset, d => d.Date), 1)
                            ])
                            .range([margin.left, svgW - margin.right])
 
@@ -95,6 +122,17 @@
                             .attr("height", svgH)
                             .attr("width", svgW)
 
+                svg.selectAll("line")
+                            .data(dataset)
+                            .enter()
+                            .append("line")
+                            .attr("x1", d => xScale(d.Date))
+                            .attr("y1", d => yScale(d.Amount))
+                            .attr("x2", d => xScale(d.Date))
+                            .attr("y2", svgH - margin.bottom)
+                            .attr("stroke", "#dddd")
+                            .attr("stroke-width", 1);
+
                 svg.selectAll("circles")
                             .data(dataset)
                             .enter()
@@ -104,16 +142,32 @@
                             .attr("r", 4)
                             .attr("fill", "green")
 
-                svg.selectAll("text")
-                            .data(dataset)
-                            .enter()
-                            .append("text")
-                            .text(d => formatTime(d.Date))
-                            .attr("x", d => xScale(d.Date))
-                            .attr("y", d => yScale(d.Amount))
-                            .attr("font-family", "sans-serif")
-                            .attr("font-size", "11px")
-                            .attr("fill", "blue")
+                // svg.selectAll("text")
+                //             .data(dataset)
+                //             .enter()
+                //             .append("text")
+                //             .text(d => formatTime(d.Date))
+                //             .attr("x", d => xScale(d.Date))
+                //             .attr("y", d => yScale(d.Amount))
+                //             .attr("font-family", "sans-serif")
+                //             .attr("font-size", "11px")
+                //             .attr("fill", "blue")
+
+                var formatTickTime = d3.timeFormat("%e");
+                var xAxis = d3.axisBottom(xScale)
+                              .ticks(9)
+                              .tickFormat(formatTickTime)
+                var yAxis = d3.axisLeft(yScale)
+
+                svg.append("g")
+                   .attr("class", "axis")
+                   .attr("transform", "translate(0, " + (svgH - margin.bottom) + ")")
+                   .call(xAxis)
+
+                svg.append("g")
+                   .attr("class", "axis")
+                   .attr("transform", "translate(" + margin.left + ", 0)")
+                   .call(yAxis);
             })
 
         </script>
