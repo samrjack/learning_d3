@@ -4,12 +4,326 @@
         <meta charset="utf-8">
         <title>D3 Page Template</title>
         <script type="text/javascript" src="d3.js"></script>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="./style.css">
     </head>
     <body>
+        <p style="color: red">Click here to update the chart and see new data values<p>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
-            // Some cool code can go here later
+            var randomInt = (max => Math.floor(Math.random() * max));
+            var dataset = [ 5, 10, 13, 19, 21, 25, 22, 18, 15, 13,
+                           11, 12, 15, 20, 18, 17, 16, 18, 23, 25];
+
+            var maxBar = 50
+            var margin = {top: 20, right: 20, bottom: 20, left: 30};
+
+            var svgW = 600;
+            var svgH = 250;
+
+            var xScale = d3.scaleBand()
+                           .domain(d3.range(dataset.length))
+                           .rangeRound([0, svgW])
+                        // .round(true) // Can use this alon with a normal range instead of "rangeRound" above.
+                           .paddingInner(0.05); // 5% of bar width will be used for padding
+
+            var yScale = d3.scaleLinear()
+                           .domain([0, d3.max(dataset)])
+                           .range([0, svgH]);
+
+            var colorScale = d3.scaleLinear()
+                               .domain([0, maxBar])
+                               .range([0,256]);
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("class", "bars")
+                        .attr("width", svgW + margin.left + margin.right)
+                        .attr("height", svgH + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            svg.selectAll("rect")
+               .data(dataset)
+               .enter()
+               .append("rect")
+               .attr("x", (_,i) => xScale(i))
+               .attr("y", d => svgH - yScale(d))
+               .attr("width", xScale.bandwidth())
+               .attr("height", yScale)
+               .attr("fill", d => "rgb(0,0," + Math.round(colorScale(d)) + ")");
+
+            svg.selectAll("text")
+               .data(dataset)
+               .enter()
+               .append("text")
+               .text(d => d)
+               .attr("text-anchor", "middle")
+               .attr("x", (_, i) => xScale(i) + xScale.bandwidth() / 2)
+               .attr("y", d => svgH - yScale(d) + 14)
+               .attr("font-family", "sans-serif")
+               .attr("font-size", "11px")
+               .attr("fill", "white");
+
+
+
+            // Scatter plot
+            var numScatterPoints = 50;
+            var maxScatterVal = 1000
+            dataset = Array.from({length: numScatterPoints}, () => [randomInt(maxScatterVal), randomInt(maxScatterVal)]);
+
+            var xScatterScale = d3.scaleLinear()
+                           .domain([0, d3.max(dataset, d => d[0])])
+                           .range([0, svgW]);
+
+            var yScatterScale = d3.scaleLinear()
+                           .domain([0, d3.max(dataset, d => d[1])])
+                           .range([svgH, 0]);
+
+
+            svg = d3.select("body")
+                    .append("svg")
+                    .attr("height", svgH + margin.top + margin.bottom)
+                    .attr("width", svgW + margin.left + margin.right)
+                    .attr("class", "scatter")
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top +")");
+
+            svg.append("clipPath")
+               .attr("id", "chart-area")
+               .append("rect")
+               .attr("x", 0)
+               .attr("y", 0)
+               .attr("width", svgW)
+               .attr("height", svgH)
+
+            svg.append("g")
+               .attr("id", "circles")
+               .attr("clip-path", "url(#chart-area)")
+               .selectAll("circle")
+               .data(dataset)
+               .enter()
+               .append("circle")
+               .attr("cx", d => xScatterScale(d[0]))
+               .attr("cy", d => yScatterScale(d[1]))
+               .attr("r", "2");
+
+            // Here are the two ways to create axis
+            var axisFormat = d3.format("")
+            var xAxis = d3.axisBottom(xScatterScale)
+            // .ticks(5)
+                          .tickFormat(axisFormat);
+
+            var yAxis = d3.axisLeft()
+                          .scale(yScatterScale);
+
+            svg.append("g")
+               .attr("class", "x axis")
+               .attr("transform", "translate(0," + (svgH) + ")")
+               .call(xAxis);
+
+            svg.append("g")
+               .attr("class", "y axis")
+               .call(yAxis);
+
+
+
+
+
+            // Bar graph 2
+            dataset = Array.from({length: randomInt(10)}, () => randomInt(maxBar));
+
+            var xBarScale = d3.scaleBand()
+                           .domain(d3.range(dataset.length))
+                           .rangeRound([0, svgW])
+                        // .round(true) // Can use this alon with a normal range instead of "rangeRound" above.
+                           .paddingInner(0.05); // 5% of bar width will be used for padding
+
+            var yBarScale = d3.scaleLinear()
+                           .domain([0, d3.max(dataset)])
+                           .range([0, svgH]);
+
+            var colorBarScale = d3.scaleLinear()
+                               .domain([0, d3.max(dataset)])
+                               .range([0,256]);
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("class", "bars2")
+                        .attr("width", svgW + margin.left + margin.right)
+                        .attr("height", svgH + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            svg.append("clipPath")
+               .attr("id", "bar2GraphArea")
+               .append("rect")
+               .attr("x", 0)
+               .attr("y", 0)
+               .attr("width", svgW)
+               .attr("height", svgH)
+
+
+            workspace = svg.append("g")
+                           .attr("id", "bar2-rects")
+                           .attr("clip-path", "url(#bar2GraphArea)");
+
+            workspace.selectAll("rect")
+                     .data(dataset)
+                     .enter()
+                     .append("rect")
+                     .attr("x", (_,i) => xBarScale(i))
+                     .attr("y", d => svgH - yBarScale(d))
+                     .attr("width", xBarScale.bandwidth())
+                     .attr("height", yBarScale)
+                     .attr("fill", d => "rgb(0,0," + Math.round(colorScale(d)) + ")");
+
+            workspace.selectAll("text")
+                     .data(dataset)
+                     .enter()
+                     .append("text")
+                     .text(d => d)
+                     .attr("text-anchor", "middle")
+                     .attr("x", (_, i) => xBarScale(i) + xBarScale.bandwidth() / 2)
+                     .attr("y", d => svgH - yBarScale(d) + (d <= 3 ? -4 : 14))
+                     .attr("fill", d => (d <= 3 ? "black" : "white"))
+                     .attr("font-family", "sans-serif")
+                     .attr("font-size", "11px");
+
+            // Adding clicking functionality
+            d3.select("p")
+               .on("click", function() {
+                   var maxValue = 50
+                   var dataset = Array.from({length: 20}, () => Math.floor(Math.random() * maxValue));
+                   var easeType = d3.easeCubicInOut;
+                   var delayFun = ((d,i) => i * 50);
+                   var dur = 2000;
+
+                   yScale.domain([0, d3.max(dataset)]);
+
+                   d3.selectAll("svg.bars rect")
+                     .data(dataset)
+                     .transition()
+                     .delay(delayFun)
+                     .duration(dur)
+                     .ease(easeType)
+                     .attr("y", d => svgH - yScale(d))
+                     .attr("height", yScale)
+                     .attr("fill", d => "rgb(0,0," + Math.round(colorScale(d)) + ")");
+
+                   d3.selectAll("svg.bars text")
+                      .data(dataset)
+                      .transition()
+                      .delay(delayFun)
+                      .duration(dur)
+                      .ease(easeType)
+                      .text(d => d)
+                      .attr("y", d => svgH - yScale(d) + (d <= 3 ? -4 : 14))
+                      .attr("fill", d => (d <= 3 ? "black" : "white"));
+
+
+
+
+
+
+                   // Scatter plot
+                   dataset = Array.from({length: numScatterPoints}, () => [randomInt(maxScatterVal), randomInt(maxScatterVal)]);
+
+                   xScatterScale.domain([0, d3.max(dataset, d => d[0])]);
+                   yScatterScale.domain([0, d3.max(dataset, d => d[1])]);
+                   d3.selectAll("svg.scatter circle")
+                     .data(dataset)
+                     .transition()
+                     .duration(500)
+                     .attr("fill", "magenta")
+                     .attr("r", 7)
+                     .transition()
+                     .duration(dur)
+                     .ease(easeType)
+                     .attr("cx", d => xScatterScale(d[0]))
+                     .attr("cy", d => yScatterScale(d[1]))
+                     .transition()
+                     .duration(500)
+                     .attr("fill", "black")
+                     .attr("r", 2)
+
+
+                   d3.select(".x.axis")
+                     .transition()
+                     .delay(500)
+                     .duration(dur)
+                     .call(xAxis);
+
+                   d3.select(".y.axis")
+                     .transition()
+                     .delay(500)
+                     .duration(dur)
+                     .call(yAxis);
+
+
+
+
+
+
+                   // Bar2
+                   dataset = Array.from({length: randomInt(10) + 1}, () => randomInt(maxBar));
+
+                   xBarScale.domain(d3.range(dataset.length))
+                   yBarScale.domain([0, d3.max(dataset)])
+
+                   var bars = d3.select("#bar2-rects")
+                            .selectAll("rect")
+                            .data(dataset);
+
+                   bars.enter()
+                       .append("rect")
+                       .attr("x", svgW)
+                       .attr("y", d => svgH - yBarScale(d))
+                       .attr("width", xBarScale.bandwidth())
+                       .attr("height", yBarScale)
+                       .attr("fill", d => "rgb(0,0," + Math.round(colorScale(d)) + ")")
+                       .merge(bars)
+                       .transition()
+                       .duration(500)
+                       .attr("x", (_, i) => xBarScale(i))
+                       .attr("y", d => svgH - yBarScale(d))
+                       .attr("width", xBarScale.bandwidth())
+                       .attr("height", yBarScale)
+                       .attr("fill", d => "rgb(0,0," + Math.round(colorScale(d)) + ")")
+
+                   bars.exit()
+                       .transition()
+                       .duration(500)
+                       .attr("x", svgW*2)
+                       .remove();
+
+                   var text = d3.select("#bar2-rects")
+                                .selectAll("text")
+                                .data(dataset);
+
+                   text.enter()
+                       .append("text")
+                       .text(d => d)
+                       .attr("text-anchor", "middle")
+                       .attr("x", svgW)
+                       .attr("y", d => svgH - yBarScale(d) + (d <= 3 ? -4 : 14))
+                       .attr("fill", d => (d <= 3 ? "black" : "white"))
+                       .attr("font-family", "sans-serif")
+                       .attr("font-size", "11px")
+                       .merge(text)
+                       .transition()
+                       .duration(500)
+                       .text(d => d)
+                       .attr("x", (_, i) => xBarScale(i) + xBarScale.bandwidth() / 2)
+                       .attr("y", d => svgH - yBarScale(d) + (d <= 3 ? -4 : 14))
+                       .attr("fill", d => (d <= 3 ? "black" : "white"))
+
+                   text.exit()
+                       .transition()
+                       .duration(500)
+                       .attr("x", svgW * 2)
+                       .remove()
+
+               });
         </script>
     </body>
 </html>
