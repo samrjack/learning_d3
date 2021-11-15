@@ -8,6 +8,10 @@
     </head>
     <body>
         <p>Click to shuffle</p>
+        <div id="divtip" class="hidden">
+            <p><strong>Impoartant Label Heading</strong></p>
+            <p><span id="divtipValue">100</span>%</p>
+        </div>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
 
@@ -35,11 +39,29 @@
 
             var svg = d3.select("body")
                         .append("svg")
-                        .attr("id", "bar1")
                         .attr("height", svgH + margin.top + margin.bottom)
                         .attr("width", svgW + margin.right + margin.left)
                         .append("g")
+                        .attr("id", "bar1")
                         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            var orderIsAscending = false;
+            var sortBars1 = function() {
+                console.log("clicked");
+                d3.selectAll("#bar1 rect")
+                  .sort((a, b) => orderIsAscending ? d3.descending(a,b) : d3.ascending(a,b))
+                  .transition("sortBars")
+                  .delay((_, i) => i * 50)
+                  .duration(1000)
+                  .attr("x", (_, i) => xScaleBar1(i));
+                d3.selectAll("#bar1 text")
+                  .sort((a, b) => orderIsAscending ? d3.descending(a,b) : d3.ascending(a,b))
+                  .transition("sortText")
+                  .delay((_, i) => i * 50)
+                  .duration(1000)
+                  .attr("x", (_, i) => xScaleBar1(i) + xScaleBar1.bandwidth() / 2);
+                orderIsAscending = !orderIsAscending;
+            }
 
             var rect = svg.selectAll("rect")
                           .data(dataset)
@@ -53,13 +75,42 @@
                           .on("mouseover", function() {
                               d3.select(this)
                                 .attr("fill", "orange");
+
+                              var val = d3.select(this).data();
+                              var xPos = parseFloat(d3.select(this).attr("x")) + xScaleBar1.bandwidth() / 2;
+                              var yPos = parseFloat(d3.select(this).attr("y")) - 4;
+
+                              d3.select("#bar1")
+                                .append("text")
+                                .attr("id", "toolTip")
+                                .text(val)
+                                .attr("x", xPos)
+                                .attr("y", yPos)
+                                .attr("text-anchor", "middle")
+                                .attr("font-family", "sans-serif")
+                                .attr("font-size", "11px")
+                                .attr("font-weight", "bold")
+                                .attr("fill", "black");
+
+                              var divTipX = parseFloat(d3.select(this).attr("x")) + xScaleBar1.bandwidth() / 2;
+                              var divTipY = parseFloat(d3.select(this).attr("y")) / 2 + svgH / 2;
+                              d3.select("#divtip")
+                                .style("left", divTipX + "px")
+                                .style("top", divTipY + "py")
+                                .classed("hidden", false)
+                                .select("#divtipValue")
+                                .text(val)
                           })
                           .on("mouseout", function() {
                               d3.select(this)
-                                .transition()
+                                .transition("revertColor")
                                 .duration(250)
                                 .attr("fill", d => "rgb(0,0," + Math.floor(cScaleBar1(d)) + ")");
-                          });
+                              d3.select("#toolTip").remove();
+                          })
+                          .on("click", sortBars1);
+            rect.append("title")
+                .text(d => d);
 
             var text = svg.selectAll("text")
                           .data(dataset)
@@ -82,7 +133,7 @@
                   cScaleBar1.domain([0, d3.max(dataset)]);
                   d3.selectAll("#bar1 rect")
                     .data(dataset)
-                    .transition()
+                    .transition("resizeBar")
                     .duration(1000)
                     .attr("y", (d) => svgH - yScaleBar1(d))
                     .attr("height", yScaleBar1)
@@ -90,7 +141,7 @@
 
                   d3.selectAll("#bar1 text")
                     .data(dataset)
-                    .transition()
+                    .transition("resizeText")
                     .duration(1000)
                     .text(d => d)
                     .attr("y", d => svgH - yScaleBar1(d) + (d <= 3 ? -4 : 14))
