@@ -49,13 +49,24 @@
                           .attr("y", d => svgH - yScaleBar1(d))
                           .attr("width", xScaleBar1.bandwidth())
                           .attr("height", yScaleBar1)
-                          .attr("fill", d => "rgb(0,0," + cScaleBar1(d) + ")");
+                          .attr("fill", d => "rgb(0,0," + Math.floor(cScaleBar1(d)) + ")")
+                          .on("mouseover", function() {
+                              d3.select(this)
+                                .attr("fill", "orange");
+                          })
+                          .on("mouseout", function() {
+                              d3.select(this)
+                                .transition()
+                                .duration(250)
+                                .attr("fill", d => "rgb(0,0," + Math.floor(cScaleBar1(d)) + ")");
+                          });
 
             var text = svg.selectAll("text")
                           .data(dataset)
                           .enter()
                           .append("text")
                           .text(d => d)
+                          .style("pointer-events", "none")
                           .attr("x", (_, i) => xScaleBar1(i) + xScaleBar1.bandwidth() / 2)
                           .attr("y", d => svgH - yScaleBar1(d) + (d <= 3 ? -4 : 14))
                           .attr("fill", d => (d <= 3 ? "black" : "white"))
@@ -75,7 +86,7 @@
                     .duration(1000)
                     .attr("y", (d) => svgH - yScaleBar1(d))
                     .attr("height", yScaleBar1)
-                    .attr("fill", d => "rgb(0,0," + cScaleBar1(d) + ")");
+                    .attr("fill", d => "rgb(0,0," + Math.floor(cScaleBar1(d)) + ")");
 
                   d3.selectAll("#bar1 text")
                     .data(dataset)
