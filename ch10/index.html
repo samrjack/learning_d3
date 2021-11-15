@@ -7,9 +7,86 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
+        <p>Click to shuffle</p>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
-            // Some cool code can go here later
+
+            var svgH = 250;
+            var svgW = 600;
+            var margin = {top: 20, right: 20, bottom: 20, left: 20};
+
+            var randomInt = ((n) => Math.floor(Math.random() * n));
+            var dataMaxVal = 50;
+            var dataLength = 20;
+            var dataset = Array.from({length: dataLength}, () => randomInt(dataMaxVal));
+
+            var xScaleBar1 = d3.scaleBand()
+                               .domain(d3.range(dataset.length))
+                               .rangeRound([0, svgW])
+                               .paddingInner(0.05);
+
+            var yScaleBar1 = d3.scaleLinear()
+                               .domain([0, d3.max(dataset)])
+                               .range([0, svgH]);
+
+            var cScaleBar1 = d3.scaleLinear()
+                               .domain([0, d3.max(dataset)])
+                               .range([0, 255])
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("id", "bar1")
+                        .attr("height", svgH + margin.top + margin.bottom)
+                        .attr("width", svgW + margin.right + margin.left)
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            var rect = svg.selectAll("rect")
+                          .data(dataset)
+                          .enter()
+                          .append("rect")
+                          .attr("x", (_, i) => xScaleBar1(i))
+                          .attr("y", d => svgH - yScaleBar1(d))
+                          .attr("width", xScaleBar1.bandwidth())
+                          .attr("height", yScaleBar1)
+                          .attr("fill", d => "rgb(0,0," + cScaleBar1(d) + ")");
+
+            var text = svg.selectAll("text")
+                          .data(dataset)
+                          .enter()
+                          .append("text")
+                          .text(d => d)
+                          .attr("x", (_, i) => xScaleBar1(i) + xScaleBar1.bandwidth() / 2)
+                          .attr("y", d => svgH - yScaleBar1(d) + (d <= 3 ? -4 : 14))
+                          .attr("fill", d => (d <= 3 ? "black" : "white"))
+                          .attr("text-anchor", "middle")
+                          .attr("font-size", "11px")
+                          .attr("font-family", "sans-serif");
+
+
+            d3.selectAll("p")
+              .on("click", function() {
+                  dataset = Array.from({length: dataLength}, () => randomInt(dataMaxVal));
+                  yScaleBar1.domain([0, d3.max(dataset)]);
+                  cScaleBar1.domain([0, d3.max(dataset)]);
+                  d3.selectAll("#bar1 rect")
+                    .data(dataset)
+                    .transition()
+                    .duration(1000)
+                    .attr("y", (d) => svgH - yScaleBar1(d))
+                    .attr("height", yScaleBar1)
+                    .attr("fill", d => "rgb(0,0," + cScaleBar1(d) + ")");
+
+                  d3.selectAll("#bar1 text")
+                    .data(dataset)
+                    .transition()
+                    .duration(1000)
+                    .text(d => d)
+                    .attr("y", d => svgH - yScaleBar1(d) + (d <= 3 ? -4 : 14))
+                    .attr("fill", d => (d <= 3 ? "black" : "white"));
+
+              })
+
         </script>
     </body>
 </html>
