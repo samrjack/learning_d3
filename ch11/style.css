@@ -5,3 +5,26 @@ body {
 svg {
     border: thin solid black;
 }
+
+.line {
+    fill: none;
+    stroke: teal;
+    stroke-width: 0.5;
+}
+
+.safeLevel {
+    stroke: red;
+}
+
+.threshold {
+    stroke-dasharray: 2, 3;
+}
+
+.area {
+    fill: teal;
+    stroke: none;
+}
+
+.danger{
+    fill: red;
+}

@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>D3 Page Template</title>
+        <title>Chapter 11 - Paths</title>
         <script type="text/javascript" src="d3.js"></script>
         <link rel="stylesheet" href="style.css">
     </head>
@@ -10,6 +10,140 @@
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
             // Some cool code can go here later
+
+            var svgH = 500;
+            var svgW = 600;
+            var margin = {top: 20, right: 20, bottom: 20, left: 40};
+
+            var rowConverter = function(d) {
+                return {
+                    date: new Date(+d.year, (+d.month - 1)),
+                    average: parseFloat(d.average)
+                };
+            }
+
+            d3.csv("./co2_mm_mlo.csv", rowConverter)
+              .then(function(data) {
+                  delete data.columns;
+                  var dataset = data;
+
+                  var xScale = d3.scaleTime()
+                             .domain([
+                                 d3.min(dataset, d => d.date),
+                                 d3.max(dataset, d => d.date)
+                             ])
+                             .range([0, svgW]);
+                  var yScale = d3.scaleLinear()
+                                 .domain([
+                                     d3.min(dataset, d => d.average >= 0 ? d.average : null) - 10,
+                                     d3.max(dataset, d => d.average)])
+                                 .range([svgH, 0]);
+
+                  var line = d3.line()
+                               .defined(d => d.average >= 0 && d.average <= 350)
+                               .x(d => xScale(d.date))
+                               .y(d => yScale(d.average));
+
+                  var dangerLine = d3.line()
+                                     .defined(d => d.average >= 350)
+                                     .x(d => xScale(d.date))
+                                     .y(d => yScale(d.average));
+
+                  var svg = d3.select("body")
+                              .append("svg")
+                              .attr("height", svgH + margin.top + margin.bottom)
+                              .attr("width", svgW + margin.right + margin.left)
+                              .append("g")
+                              .attr("id", "pathArea")
+                              .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
+
+                  // Draw a safety line
+                  svg.append("line")
+                     .attr("class", "line safeLevel threshold")
+                     .attr("x1", 0)
+                     .attr("x2", svgW)
+                     .attr("y1", yScale(350))
+                     .attr("y2", yScale(350));
+
+                  svg.append("path")
+                     .datum(dataset)
+                     .attr("class", "line")
+                     .attr("d", line);
+
+                  svg.append("path")
+                     .datum(dataset)
+                     .attr("class", "line safeLevel")
+                     .attr("d", dangerLine);
+
+                  var xAxis = d3.axisBottom()
+                                .scale(xScale);
+                  var yAxis = d3.axisLeft()
+                                .scale(yScale);
+
+                  svg.append("g")
+                     .attr("class", "axis")
+                     .attr("transform", "translate(0, " + svgH + ")")
+                     .call(xAxis);
+
+                  svg.append("g")
+                     .attr("class", "axis")
+                     .call(yAxis);
+
+
+
+
+
+
+                  // Area graph
+                  area = d3.area()
+                           .defined(d => d.average >= 0)
+                           .x(d => xScale(d.date))
+                           .y0(() => yScale.range()[0])
+                           .y1(d => yScale(d.average));
+
+                  dangerArea = d3.area()
+                                 .defined(d => d.average >= 350)
+                                 .x(d => xScale(d.date))
+                                 .y0(() => yScale(350))
+                                 .y1(d => yScale(d.average));
+
+                  var svg = d3.select("body")
+                              .append("svg")
+                              .attr("height", svgH + margin.top + margin.bottom)
+                              .attr("width", svgW + margin.right + margin.left)
+                              .append("g")
+                              .attr("id", "areaArea")
+                              .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
+
+                  // Draw a safety line
+                  svg.append("line")
+                     .attr("class", "line safeLevel threshold")
+                     .attr("x1", 0)
+                     .attr("x2", svgW)
+                     .attr("y1", yScale(350))
+                     .attr("y2", yScale(350));
+
+                  svg.append("path")
+                     .datum(dataset)
+                     .attr("class", "area")
+                     .attr("d", area);
+                  svg.append("path")
+                     .datum(dataset)
+                     .attr("class", "area danger")
+                     .attr("d", dangerArea);
+
+                  svg.append("g")
+                     .attr("class", "axis")
+                     .attr("transform", "translate(0, " + svgH + ")")
+                     .call(xAxis);
+
+                  svg.append("g")
+                     .attr("class", "axis")
+                     .call(yAxis);
+
+              });
+
+
         </script>
     </body>
 </html>
