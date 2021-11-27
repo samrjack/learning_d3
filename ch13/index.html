@@ -9,7 +9,282 @@
     <body>
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
-            // Some cool code can go here later
+            var svgH = 300;
+            var svgW = 300;
+            var padding = {top: 20, right: 20, bottom: 20, left: 20};
+
+            var dataset = [5, 10, 20, 45, 6, 25];
+            var pie = d3.pie();
+
+            var outerRadius = svgW/2;
+            var innerRadius = 50;
+            var arc = d3.arc()
+                        .innerRadius(innerRadius)
+                        .outerRadius(outerRadius);
+
+            var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("height", svgH + padding.top + padding.bottom)
+                        .attr("width", svgW + padding.left + padding.right)
+                        .append("g")
+                        .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
+            var arcs = svg.selectAll("g.arc")
+                          .data(pie(dataset))
+                          .enter()
+                          .append("g")
+                          .attr("class", "arc")
+                          .attr("transform", "translate(" + outerRadius + ", " + outerRadius + ")");
+
+            arcs.append("path")
+                .attr("fill", (_, i) => color(i))
+                .attr("d", arc);
+
+            arcs.append("text")
+                .attr("transform", d => "translate(" + arc.centroid(d) + ")")
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .text(d => d.value);
+
+            // Stack layout
+            dataset = [
+                { apples: 5,  oranges: 10, grapes: 22 },
+                { apples: 4,  oranges: 12, grapes: 28 },
+                { apples: 2,  oranges: 19, grapes: 32 },
+                { apples: 7,  oranges: 23, grapes: 35 },
+                { apples: 23, oranges: 17, grapes: 43 }
+            ];
+
+            var stack = d3.stack()
+                          .keys(["apples", "oranges", "grapes"])
+                          .order(d3.stackOrderDescending);
+
+            var series = stack(dataset);
+
+            var xScale = d3.scaleBand()
+                           .domain(d3.range(dataset.length))
+                           .range([0, svgW])
+                           .paddingInner(0.05);
+
+            var yScale = d3.scaleLinear()
+                           .domain([0, d3.max(dataset, d => d.apples + d.oranges + d.grapes)])
+                           .range([svgH, 0]);
+
+            svg = d3.select("body")
+                    .append("svg")
+                    .attr("height", svgH + padding.top + padding.bottom)
+                    .attr("width", svgW + padding.left + padding.right)
+                    .append("g")
+                    .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+            var groups = svg.selectAll("g")
+                            .data(series)
+                            .enter()
+                            .append("g")
+                            .style("fill", (_, i) => color(i));
+
+            var rects = groups.selectAll("rect")
+                              .data(d => d)
+                              .enter()
+                              .append("rect")
+                              .attr("x", (_, i) => xScale(i))
+                              .attr("y", d => yScale(d[1]))
+                              .attr("height", d => yScale(d[0]) - yScale(d[1]))
+                              .attr("width", xScale.bandwidth());
+
+            // Stacked area
+            var areasvgH = 500;
+            var areasvgW = 800;
+
+            var parseTime = d3.timeParse("%Y-%m");
+            var formatTime = d3.timeFormat("%b %Y");
+
+            var rowConverter = function(d, i, cols) {
+                var row = { date: parseTime(d.Date) };
+                for (var i = 1; i < cols.length; i++) {
+                    var col = cols[i];
+
+                    //if the value exists
+                    if (d[col]) {
+                        row[col] = +d[col];
+                    } else {
+                        row[col] = 0;
+                    }
+                }
+                return row;
+            }
+
+            stack = d3.stack()
+                      .order(d3.stackOrderDecending);
+
+            d3.select("body")
+              .append("p")
+              .text("Monthly number of electric vehicles sold in US");
+
+            var areaSvg = d3.select("body")
+                            .append("svg")
+                            .attr("height", areasvgH + padding.top + padding.bottom)
+                            .attr("width", areasvgW + padding.left + padding.right)
+                            .append("g")
+                            .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
+            d3.csv("sales_data.csv", rowConverter).then(function (data) {
+                var dataset = data;
+
+                var keys = dataset.columns;
+                keys.shift() // remove the first column (the date data)
+                stack.keys(keys); // Stack using what's left
+
+                var series = stack(dataset);
+
+                xScale = d3.scaleTime()
+                           .domain([
+                               d3.min(dataset, d => d.date),
+                               d3.max(dataset, d => d.date)
+                           ])
+                           .range([0, areasvgW]);
+
+                yScale = d3.scaleTime()
+                           .domain([
+                               0,
+                               d3.max(dataset, d => keys.map(k => d[k]).reduce((x,y) => x + y))
+                           ])
+                           .range([areasvgH, 0])
+                           .nice();
+
+                xAxis = d3.axisBottom()
+                          .scale(xScale)
+                          .ticks(10)
+                          .tickFormat(formatTime);
+                yAxis = d3.axisLeft()
+                          .scale(yScale)
+                          .ticks(5);
+
+                // Define area generator
+                area = d3.area()
+                         .x(d => xScale(d.data.date))
+                         .y0(d => yScale(d[0]))
+                         .y1(d => yScale(d[1]))
+
+
+                areaSvg.selectAll("path")
+                         .data(series)
+                         .enter()
+                         .append("path")
+                         .attr("class", "area")
+                         .attr("d", area)
+                         .attr("fill", (_, i) => d3.schemeCategory10[i])
+                         .append("title") // Make tooltip
+                         .text(d => d.key);
+
+                areaSvg.append("g")
+                       .attr("class", "axis")
+                       .attr("transform", "translate(0," + areasvgH + ")")
+                       .call(xAxis);
+                areaSvg.append("g")
+                       .attr("class", "axis")
+                       .attr("transform", "translate(" + areasvgW + ",0)")
+                       .call(yAxis);
+
+            })
+
+            // Force layout
+            svgH = 300;
+            svgW = 300;
+
+            var dataset = {
+                nodes: [
+                    {name: "Adam"},
+                    {name: "Bob"},
+                    {name: "Carrie"},
+                    {name: "Donovan"},
+                    {name: "Edward"},
+                    {name: "Felicity"},
+                    {name: "George"},
+                    {name: "Hannah"},
+                    {name: "Iris"},
+                    {name: "Jerry"}
+                ],
+                edges: [
+                    {source: 0, target: 1},
+                    {source: 0, target: 2},
+                    {source: 0, target: 3},
+                    {source: 0, target: 4},
+                    {source: 1, target: 5},
+                    {source: 2, target: 5},
+                    {source: 2, target: 5},
+                    {source: 3, target: 4},
+                    {source: 5, target: 8},
+                    {source: 5, target: 9},
+                    {source: 6, target: 7},
+                    {source: 7, target: 8},
+                    {source: 8, target: 9}
+                ]
+            };
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("height", svgH + padding.top + padding.bottom)
+                        .attr("width", svgW + padding.left + padding.right)
+                        .append("g")
+                        .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
+            var force = d3.forceSimulation(dataset.nodes)
+                          .force("charge", d3.forceManyBody())
+                          .force("link", d3.forceLink(dataset.edges))
+                          .force("center", d3.forceCenter().x(svgW/2).y(svgH/2));
+
+            var dragStarted = (e, d) => {
+                if (!e.active) force.alphaTarget(0.3).restart();
+
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            var dragging = (e, d) => {
+                d.fx = e.x;
+                d.fy = e.y;
+            }
+
+            var dragEnded = (e, d) => {
+                if (!e.active) force.alphaTarget(0);
+
+                d.fx = null;
+                d.fy = null;
+            }
+
+            var edges = svg.selectAll("line")
+                           .data(dataset.edges)
+                           .enter()
+                           .append("line")
+                           .style("stroke", "#ccc")
+                           .style("stroke-width", 1);
+
+            var nodes = svg.selectAll("circle")
+                           .data(dataset.nodes)
+                           .enter()
+                           .append("circle")
+                           .attr("r", 10)
+                           .style("fill", (_, i) => color(i))
+                           .call(d3.drag()
+                                   .on("start", dragStarted)
+                                   .on("drag", dragging)
+                                   .on("end", dragEnded));
+
+            nodes.append("title")
+                 .text(d => d.name);
+
+            force.on("tick", () => {
+                edges.attr("x1", d => d.source.x)
+                     .attr("y1", d => d.source.y)
+                     .attr("x2", d => d.target.x)
+                     .attr("y2", d => d.target.y);
+
+                nodes.attr("cx", d => d.x)
+                     .attr("cy", d => d.y);
+            })
+
         </script>
     </body>
 </html>
