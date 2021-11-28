@@ -10,52 +10,9 @@
         <script type="text/javascript" scr="script.js"></script>
         <script type="text/javascript">
 
-            var svgH = 600;
-            var svgW = 800;
+            var svgH = 500;
+            var svgW = 900;
             var padding = {top: 20, right: 20, bottom: 20, left: 20};
-
-            var dragging = (e, d) => {
-                // console.log(e);
-
-                var offset = projection.translate();
-
-                offset[0] += e.dx;
-                offset[1] += e.dy;
-                projection.translate(offset);
-                map.selectAll("path")
-                   .attr("d", path);
-                map.selectAll("circle")
-                   .attr("cx", d => projection([d.lon, d.lat])[0])
-                   .attr("cy", d => projection([d.lon, d.lat])[1]);
-                map.selectAll("text")
-                   .attr("x", d => path.centroid(d)[0])
-                   .attr("y", d => path.centroid(d)[1]);
-            }
-            var drag = d3.drag()
-                         .on("drag", dragging);
-
-            var zooming = (e, d) => {
-                // console.log(e);
-                var offset = [e.transform.x, e.transform.y];
-                var newScale = Math.sqrt(e.transform.k) * 2000;
-
-                projection.translate(offset)
-                          .scale([newScale]);
-
-                map.selectAll("path")
-                   .attr("d", path);
-
-                map.selectAll("circle")
-                   .attr("cx", d => projection([d.lon, d.lat])[0])
-                   .attr("cy", d => projection([d.lon, d.lat])[1]);
-                map.selectAll("text")
-                   .attr("x", d => path.centroid(d)[0])
-                   .attr("y", d => path.centroid(d)[1]);
-            }
-            var zoom = d3.zoom()
-                         .scaleExtent([0.01, 100])
-                         .translateExtent([[-1200, -700], [1200, 700]])
-                         .on("zoom", zooming);
 
             var svg = d3.select("body")
                         .append("svg")
@@ -63,17 +20,6 @@
                         .attr("width", svgW + padding.left + padding.right)
                         .append("g")
                         .attr("transform", "translate(" + padding.left + "," + padding.top + ")");
-
-            var map = svg.append("g")
-                         .attr("id", "map")
-                         .call(zoom)
-                         .call(drag); //not needed when zoom enabled but kept for documentation
-            map.append("rect")
-               .attr("x", 0)
-               .attr("y", 0)
-               .attr("width", svgW)
-               .attr("height", svgH)
-               .attr("opacity", 0);
 
             var projection = d3.geoAlbersUsa()
                                .translate([svgW/2, svgH/2])
@@ -87,10 +33,9 @@
                                  ,"rgb(49,163,84)","rgb(0,109,44)"]);
 
             var formatAsThousands = d3.format(",");
-            var formatDecimals = d3.format(".3");
 
             d3.json("us-states.json").then(function(json) {
-                // map.selectAll("path")
+                // svg.selectAll("path")
                 //    .data(json.features)
                 //    .enter()
                 //    .append("path")
@@ -114,7 +59,7 @@
                     }
 
 
-                    map.selectAll("path")
+                    svg.selectAll("path")
                        .data(json.features)
                        .enter()
                        .append("path")
@@ -126,18 +71,9 @@
                            return  "#ccc";
                        });
 
-                    map.selectAll("text")
-                       .data(json.features)
-                       .enter()
-                       .append("text")
-                       .attr("class", "label")
-                       .attr("x", d => path.centroid(d)[0])
-                       .attr("y", d => path.centroid(d)[1])
-                       .text(d => {if (d.properties.value) return formatDecimals(d.properties.value)});
-
                     d3.csv("us-cities.csv").then(function(cities) {
 
-                        map.selectAll("circle")
+                        svg.selectAll("circle")
                            .data(cities)
                            .enter()
                            .append("circle")
@@ -197,7 +133,7 @@
                          .html("&larr;");
 
                     var east = svg.append("g")
-                                   .attr("class", "pan")
+                                   .attr("class", pan)
                                    .attr("id", "east");
                     east.append("rect")
                          .attr("x", svgW - 30)
@@ -225,7 +161,7 @@
                               case "south":
                                   offset[1] -= moveAmount;
                                   break;
-                              case "west":
+                              case "east":
                                   offset[0] += moveAmount;
                                   break;
                               case "east":
@@ -237,27 +173,16 @@
 
                           // update projection
                           projection.translate(offset);
-                          if (!hasScaledYet) {
-                              hasScaledYet = true;
-                              projection.scale([2000])
-                          }
 
                           // update all shapes
-                          map.selectAll("path")
-                             .transition()
+                          svg.selectAll("path")
                              .attr("d", path);
-                          map.selectAll("circle")
-                             .transition()
+                          svg.selectAll("circle")
                              .attr("cx", d => projection([d.lon, d.lat])[0])
-                             .attr("cy", d => projection([d.lon, d.lat])[1]);
-                          map.selectAll("text")
-                             .attr("x", d => path.centroid(d)[0])
-                             .attr("y", d => path.centroid(d)[1]);
+                             .attr("cy", d => projection([d.lon, d.lat][1]));
                       })
                 }
             })
-
-            var hasScaledYet = 0;
         </script>
     </body>
 </html>
